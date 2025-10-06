@@ -7,19 +7,22 @@ from .ball import Ball
 WHITE = (255, 255, 255)
 
 class GameEngine:
-    def __init__(self, width, height):
+    # Accept a sounds dictionary
+    def __init__(self, width, height, sounds=None):
         self.width = width
         self.height = height
         self.paddle_width = 10
         self.paddle_height = 100
+        self.sounds = sounds # Store the sounds dictionary
 
         self.player = Paddle(10, height // 2 - 50, self.paddle_width, self.paddle_height)
         self.ai = Paddle(width - 20, height // 2 - 50, self.paddle_width, self.paddle_height)
-        self.ball = Ball(width // 2, height // 2, 7, 7, width, height)
+        # Pass sounds to the ball object for paddle/wall hits
+        self.ball = Ball(width // 2, height // 2, 7, 7, width, height, sounds) 
 
         self.player_score = 0
         self.ai_score = 0
-        self.winning_score = 5  # Default target score
+        self.winning_score = 5
 
         # State management
         self.game_running = True 
@@ -29,7 +32,6 @@ class GameEngine:
         self.game_over_font = pygame.font.SysFont("Arial", 60)
 
     def handle_input(self):
-        # Only process player paddle input if the game is actively running
         if self.game_running:
             keys = pygame.key.get_pressed()
             if keys[pygame.K_w]:
@@ -39,18 +41,25 @@ class GameEngine:
 
     def update(self):
         if not self.game_running:
-            return  # Stop all game updates if the game is over
+            return
 
         self.ball.move()
         self.ball.check_collision(self.player, self.ai)
 
         # Check for scoring and update scores
+        scored = False
         if self.ball.x <= 0:
             self.ai_score += 1
             self.ball.reset()
+            scored = True
         elif self.ball.x >= self.width:
             self.player_score += 1
             self.ball.reset()
+            scored = True
+            
+        # Play score sound after a point is won
+        if scored and self.sounds and self.sounds['score']:
+            self.sounds['score'].play()
 
         self.ai.auto_track(self.ball, self.height)
         
@@ -69,14 +78,13 @@ class GameEngine:
         self.ai_score = 0
         self.winner = None
         self.game_running = True
-        self.ball.reset() # Reset the ball position and direction
+        self.ball.reset()
 
     def render(self, screen):
         # Draw paddles and ball
         pygame.draw.rect(screen, WHITE, self.player.rect())
         pygame.draw.rect(screen, WHITE, self.ai.rect())
         
-        # Only draw the ball if the game is running
         if self.game_running:
             pygame.draw.rect(screen, WHITE, self.ball.rect())
 

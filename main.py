@@ -1,12 +1,10 @@
-## 2. `main.py` (Updated for Input Handling)
-
-
 import pygame
 import time
 from game.game_engine import GameEngine
 
 # Initialize pygame/Start application
 pygame.init()
+pygame.mixer.init()  # Initialize the mixer for sound effects
 
 # Screen dimensions
 WIDTH, HEIGHT = 800, 600
@@ -21,8 +19,19 @@ BLACK = (0, 0, 0)
 clock = pygame.time.Clock()
 FPS = 60
 
+# Load Sound Effects (PLACEHOLDER NAMES - Ensure these files exist!)
+try:
+    SOUNDS = {
+        'paddle_hit': pygame.mixer.Sound('paddle_hit.wav'),
+        'wall_bounce': pygame.mixer.Sound('wall_bounce.wav'),
+        'score': pygame.mixer.Sound('score.wav')
+    }
+except pygame.error as e:
+    print(f"Warning: Could not load sound files. Make sure 'paddle_hit.wav', 'wall_bounce.wav', and 'score.wav' are in the correct directory. Error: {e}")
+    SOUNDS = None
+    
 # Game loop
-engine = GameEngine(WIDTH, HEIGHT)
+engine = GameEngine(WIDTH, HEIGHT, SOUNDS) # Pass sounds to the engine
 
 def main():
     running = True
@@ -35,13 +44,13 @@ def main():
             # Check for Replay/Exit input only if the game has ended
             if not engine.game_running and event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_3:
-                    engine.reset_game(3) # Best of 3
+                    engine.reset_game(3)
                 elif event.key == pygame.K_5:
-                    engine.reset_game(5) # Best of 5
+                    engine.reset_game(5)
                 elif event.key == pygame.K_7:
-                    engine.reset_game(7) # Best of 7
+                    engine.reset_game(7)
                 elif event.key == pygame.K_ESCAPE:
-                    running = False # Exit loop immediately
+                    running = False
 
         SCREEN.fill(BLACK)
         
@@ -55,7 +64,6 @@ def main():
         pygame.display.flip()
         clock.tick(FPS)
         
-    # Game loop has exited. No delay needed now as the user controls the exit.
     pygame.quit()
 
 if __name__ == "__main__":
