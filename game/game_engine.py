@@ -15,22 +15,21 @@ class GameEngine:
 
         self.player = Paddle(10, height // 2 - 50, self.paddle_width, self.paddle_height)
         self.ai = Paddle(width - 20, height // 2 - 50, self.paddle_width, self.paddle_height)
-        # Assuming ball.py has been updated from the previous request with the max_speed and spin logic
         self.ball = Ball(width // 2, height // 2, 7, 7, width, height)
 
         self.player_score = 0
         self.ai_score = 0
-        self.winning_score = 5  # Set the target score to 5
+        self.winning_score = 5  # Default target score
 
-        # New state variable to control game loop logic
+        # State management
         self.game_running = True 
-        
-        self.font = pygame.font.SysFont("Arial", 30)
-        self.game_over_font = pygame.font.SysFont("Arial", 60)
         self.winner = None
 
+        self.font = pygame.font.SysFont("Arial", 30)
+        self.game_over_font = pygame.font.SysFont("Arial", 60)
+
     def handle_input(self):
-        # Only process input if the game is actively running
+        # Only process player paddle input if the game is actively running
         if self.game_running:
             keys = pygame.key.get_pressed()
             if keys[pygame.K_w]:
@@ -55,7 +54,7 @@ class GameEngine:
 
         self.ai.auto_track(self.ball, self.height)
         
-        # Check for Game Over condition after score updates
+        # Check for Game Over condition
         if self.player_score >= self.winning_score:
             self.game_running = False
             self.winner = "Player"
@@ -63,11 +62,23 @@ class GameEngine:
             self.game_running = False
             self.winner = "AI"
 
+    def reset_game(self, new_winning_score):
+        """Resets the game state and sets a new winning score."""
+        self.winning_score = new_winning_score
+        self.player_score = 0
+        self.ai_score = 0
+        self.winner = None
+        self.game_running = True
+        self.ball.reset() # Reset the ball position and direction
+
     def render(self, screen):
         # Draw paddles and ball
         pygame.draw.rect(screen, WHITE, self.player.rect())
         pygame.draw.rect(screen, WHITE, self.ai.rect())
-        pygame.draw.rect(screen, WHITE, self.ball.rect())
+        
+        # Only draw the ball if the game is running
+        if self.game_running:
+            pygame.draw.rect(screen, WHITE, self.ball.rect())
 
         # Draw centerline (dashed)
         for i in range(0, self.height, 20):
@@ -79,15 +90,23 @@ class GameEngine:
         screen.blit(player_text, (self.width // 4, 20))
         screen.blit(ai_text, (self.width * 3 // 4 - ai_text.get_width(), 20))
 
-        # Draw Game Over message if game has ended
+        # Draw Game Over message and Replay Options
         if not self.game_running and self.winner:
-            message = f"{self.winner} Wins!"
+            message = f"{self.winner} Wins! (Best of {self.winning_score})"
             text_surface = self.game_over_font.render(message, True, WHITE)
-            text_rect = text_surface.get_rect(center=(self.width // 2, self.height // 2))
+            text_rect = text_surface.get_rect(center=(self.width // 2, self.height // 2 - 50))
             screen.blit(text_surface, text_rect)
             
-            # Sub-message for exit/replay (Task 3 prep)
-            sub_message = "Press ESC to exit..."
-            sub_text_surface = self.font.render(sub_message, True, WHITE)
-            sub_text_rect = sub_text_surface.get_rect(center=(self.width // 2, self.height // 2 + 70))
-            screen.blit(sub_text_surface, sub_text_rect)
+            # Replay options menu
+            menu_options = [
+                "Press '3' for Best of 3",
+                "Press '5' for Best of 5",
+                "Press '7' for Best of 7",
+                "Press 'ESC' to Exit"
+            ]
+            y_offset = 0
+            for option in menu_options:
+                sub_text_surface = self.font.render(option, True, WHITE)
+                sub_text_rect = sub_text_surface.get_rect(center=(self.width // 2, self.height // 2 + 50 + y_offset))
+                screen.blit(sub_text_surface, sub_text_rect)
+                y_offset += 40
